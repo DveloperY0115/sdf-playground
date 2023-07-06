@@ -29,6 +29,8 @@ class SuperquadricConfig(PrimitiveConfig):
     """Powers involved in the equation of superquadric"""
     scales: Shaped[Tensor, "3"] = torch.ones(3)
     """Scale of superquadric along local, canonical axes"""
+    truncation: float = 0.0
+    """The truncated signed distance of the superquadric"""
 
 
 class Superquadric(Primitive):
@@ -47,8 +49,7 @@ class Superquadric(Primitive):
         self.orientation: Shaped[Tensor, "3 3"] = self.config.orientation
         self.epsilons: Shaped[Tensor, "2"] = self.config.epsilons
         self.scales: Shaped[Tensor, "3"] = self.config.scales
-
-        # assertions
+        self.truncation: float = self.config.truncation
 
         # check whether the given rotation matrix is valid
         determinant = torch.linalg.det(self.orientation)
@@ -118,7 +119,16 @@ class Superquadric(Primitive):
 
         signed_distance = coords_norm * (1.0 - scale)
 
-        # TODO: add truncation
+        # SDF -> TSDF
+        if self.truncation != 0:
+            signed_distance = torch.minimum(
+                torch.maximum(
+                    signed_distance,
+                    -self.truncation * torch.ones_like(signed_distance),
+                ),
+                self.truncation * torch.ones_like(signed_distance),
+            )
+
         return signed_distance
 
     @jaxtyped
