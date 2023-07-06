@@ -9,6 +9,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, List, Type
 
+import torch
+
 from src.configs.base_config import InstantiateConfig
 
 
@@ -23,6 +25,8 @@ class TestConfig(InstantiateConfig):
     """The name of the test"""
     test_cases: List[Callable] = field(default_factory=lambda: [])
     """The list of test cases to run"""
+    device: torch.device = torch.device("cuda")
+    """The device to run the test on"""
 
 class Test:
     """The base class """
@@ -34,6 +38,7 @@ class Test:
         self.config = config
 
         self._register_test_cases()
+        self.device = self.config.device
 
     def _register_test_cases(self) -> None:
         """Registers the test cases specified in the config"""
@@ -50,7 +55,7 @@ class Test:
         for test_case in self.test_cases:
             test_dir = exp_dir / test_case.__name__  
             test_dir.mkdir(parents=True, exist_ok=True)
-            test_case(test_dir)
+            test_case(test_dir, self.device)
 
         print(
             f"Test [{self.__class__.__name__}] successfully passed all tests."

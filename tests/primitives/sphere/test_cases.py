@@ -12,7 +12,7 @@ import torch
 from src.primitives.sphere import SphereConfig
 
 
-def test_create_sphere(out_dir: Path):
+def test_create_sphere(out_dir: Path, device: torch.device):
     """Creates a sphere and checks its default parameters"""
 
     config = SphereConfig()
@@ -25,7 +25,7 @@ def test_create_sphere(out_dir: Path):
     assert default_radius == 1.0
     assert torch.all(default_center == torch.zeros(3))
 
-def test_sdf_inner_1(out_dir: Path):
+def test_sdf_inner_1(out_dir: Path, device: torch.device):
     """
     Test SDF evaluated inside a sphere.
 
@@ -41,7 +41,7 @@ def test_sdf_inner_1(out_dir: Path):
     # test values
     assert torch.allclose(sd_computed, sd_gt)
 
-def test_sdf_inner_2(out_dir: Path):
+def test_sdf_inner_2(out_dir: Path, device: torch.device):
     """
     Test SDF evaluated inside a sphere.
 
@@ -65,16 +65,16 @@ def test_sdf_inner_2(out_dir: Path):
     sd_computed = sphere.evaluate_sdf(coords)
     sd_gt = torch.tensor(
         [
-            [math.sqrt(0.75) - 2.0],
-            [math.sqrt(3.0) - 2.0],
-            [math.sqrt(0.5) - 2.0],
+            math.sqrt(0.75) - 2.0,
+            math.sqrt(3.0) - 2.0,
+            math.sqrt(0.5) - 2.0,
         ],
     )
 
     # test values
-    assert torch.allclose(sd_computed, sd_gt)
+    assert torch.allclose(sd_computed, sd_gt), f"{(sd_computed - sd_gt).abs().max()}"
 
-def test_sdf_outer_1(out_dir: Path):
+def test_sdf_outer_1(out_dir: Path, device: torch.device):
     """
     Test SDF evaluated outside a sphere.
 
@@ -85,12 +85,12 @@ def test_sdf_outer_1(out_dir: Path):
     sphere = config.setup()
 
     sd_computed = sphere.evaluate_sdf(2.0 * torch.eye(3))
-    sd_gt = torch.tensor([[1.0], [1.0], [1.0]])
+    sd_gt = torch.tensor([1.0, 1.0, 1.0])
 
     # test values
     assert torch.allclose(sd_computed, sd_gt)
 
-def test_sdf_outer_2(out_dir: Path):
+def test_sdf_outer_2(out_dir: Path, device: torch.device):
     """
     Test SDF evaluated outside a sphere.
 
@@ -114,16 +114,16 @@ def test_sdf_outer_2(out_dir: Path):
     sd_computed = sphere.evaluate_sdf(coords)
     sd_gt = torch.tensor(
         [
-            [math.sqrt(0.75) - 0.5],
-            [math.sqrt(3.0) - 0.5],
-            [math.sqrt(1.5) - 0.5],
+            math.sqrt(0.75) - 0.5,
+            math.sqrt(3.0) - 0.5,
+            math.sqrt(1.5) - 0.5,
         ],
     )
 
     # test values
     assert torch.allclose(sd_computed, sd_gt)
 
-def test_sdf_gradient(out_dir: Path):
+def test_sdf_gradient(out_dir: Path, device: torch.device):
     """
     Test the differentiation of SDF defined by a sphere.
 

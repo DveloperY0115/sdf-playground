@@ -12,7 +12,7 @@ import torch
 from src.cameras.perspective_camera import PerspectiveCamera
 
 
-def test_create_camera(out_dir: Path):
+def test_create_camera(out_dir: Path, device: torch.device):
     """Creates a perspective camera and checks its parameters"""
 
     # test arguments

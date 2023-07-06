@@ -12,7 +12,7 @@ import torch
 from src.primitives.superquadric import SuperquadricConfig
 
 
-def test_create_superquadric(out_dir: Path):
+def test_create_superquadric(out_dir: Path, device: torch.device):
     """Creates a superquadric and checks its default parameters"""
 
     config = SuperquadricConfig()
