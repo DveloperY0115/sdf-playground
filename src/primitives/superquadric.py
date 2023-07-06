@@ -55,12 +55,6 @@ class Superquadric(Primitive):
         determinant = torch.linalg.det(self.orientation)
         assert torch.isclose(determinant, torch.ones(1))
 
-        ####
-        # TODO: Is this constraint really necessary?
-        # check whether epsilons lie in (0, 2)
-        # assert torch.all((self.epsilons > 0.0) & (self.epsilons < 2.0))
-        ####
-
         # check whether scales are positive
         assert torch.all(self.scales > 0.0)
 
