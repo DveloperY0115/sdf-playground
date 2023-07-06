@@ -86,6 +86,10 @@ class VolSDFRenderer(Renderer):
         normals = normals / (torch.linalg.norm(normals, dim=1, keepdim=True) + 1e-8)
         normals = normals.reshape(num_ray, num_sample, 3)
 
+        # transform normals to camera space
+        camera_to_world = camera.camera_to_world
+        normals = normals @ camera_to_world[:3, :3].T
+
         # compute distance between adjacent samples
         deltas = ray_samples.compute_deltas()
 
