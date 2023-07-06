@@ -6,7 +6,7 @@ NeRF: Representing Scenes as Neural Radiance Fields for View Synthesis, Mildenha
 """
 
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, Type
 from typeguard import typechecked
 
 from jaxtyping import Float, jaxtyped
@@ -21,7 +21,7 @@ from src.renderers.ray_samplers.base_sampler import RaySampler, RaySamplerConfig
 class StratifiedSamplerConfig(RaySamplerConfig):
     """The configuration of a stratified sampler"""
 
-    _target: type = field(default_factory=lambda: StratifiedSampler)
+    _target: Type = field(default_factory=lambda: StratifiedSampler)
 
     num_sample_coarse: int = 64
     """Number of samples to generate in the coarse sampling stage"""
