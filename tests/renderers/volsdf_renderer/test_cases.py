@@ -170,6 +170,8 @@ def test_render_sphere(out_dir: Path, device: torch.device):
     )
 
     # save rendering outputs
+    depth_processed = []
+    normal_processed = []
     for camera_index, (depth_map, normal_map) in enumerate(
         zip(depth_maps, normal_maps)
     ):
@@ -181,6 +183,7 @@ def test_render_sphere(out_dir: Path, device: torch.device):
             str(out_dir / f"{camera_index:03d}_depth_map.png"),
             depth_map,
         )
+        depth_processed.append(depth_map)
 
         normal_map = (normal_map + 1.0) * 0.5
         normal_map = (normal_map * 255.0).astype(int)
@@ -188,6 +191,15 @@ def test_render_sphere(out_dir: Path, device: torch.device):
             str(out_dir / f"{camera_index:03d}_normal_map.png"),
             normal_map,
         )
+        normal_processed.append(normal_map)
+
+    depth_processed = np.stack(depth_processed, axis=0)[..., None]
+    normal_processed = np.stack(normal_processed, axis=0)
+
+    create_video_from_images(
+        depth_processed,
+        out_dir / "depth_sequence.mp4",
+    )
 
 def test_render_superquadric1(out_dir: Path, device: torch.device):
     """Tests the rendering method of VolSDFRenderer"""
@@ -220,6 +232,8 @@ def test_render_superquadric1(out_dir: Path, device: torch.device):
     )
 
     # save rendering outputs
+    depth_processed = []
+    normal_processed = []
     for camera_index, (depth_map, normal_map) in enumerate(
         zip(depth_maps, normal_maps)
     ):
@@ -231,6 +245,7 @@ def test_render_superquadric1(out_dir: Path, device: torch.device):
             str(out_dir / f"{camera_index:03d}_depth_map.png"),
             depth_map,
         )
+        depth_processed.append(depth_map)
 
         normal_map = (normal_map + 1.0) * 0.5
         normal_map = (normal_map * 255.0).astype(int)
@@ -238,6 +253,15 @@ def test_render_superquadric1(out_dir: Path, device: torch.device):
             str(out_dir / f"{camera_index:03d}_normal_map.png"),
             normal_map,
         )
+        normal_processed.append(normal_map)
+
+    depth_processed = np.stack(depth_processed, axis=0)[..., None]
+    normal_processed = np.stack(normal_processed, axis=0)
+
+    create_video_from_images(
+        depth_processed,
+        out_dir / "depth_sequence.mp4",
+    )
 
 def test_render_superquadric2(out_dir: Path, device: torch.device):
     """Tests the rendering method of VolSDFRenderer"""
@@ -317,6 +341,76 @@ def test_render_superquadric3(out_dir: Path, device: torch.device):
     # create a superquadric
     superquadric_config = SuperquadricConfig(
         epsilons=torch.tensor([2.5, 0.1]),
+        scales=torch.tensor([1.0, 1.0, 2.0]),
+    )
+    superqudric = superquadric_config.setup()
+
+    # render primitive
+    depth_maps, normal_maps = render_primitive_from_spherical_poses(
+        superqudric,
+        renderer,
+        camera_radius=7.0,
+        camera_elevation=math.pi / 4,
+        num_azimuth_step=36,
+        image_height=400,
+        image_width=400,
+        device=device,
+    )
+
+    # save rendering outputs
+    depth_processed = []
+    normal_processed = []
+    for camera_index, (depth_map, normal_map) in enumerate(
+        zip(depth_maps, normal_maps)
+    ):
+        depth_min, depth_max = depth_map.min(), depth_map.max()
+        depth_map = (depth_map - depth_min) / (depth_max - depth_min) + 1e-6
+        depth_map = np.clip(depth_map, 0.0, 1.0)
+        depth_map = (depth_map * 255.0).astype(int)
+        cv2.imwrite(
+            str(out_dir / f"{camera_index:03d}_depth_map.png"),
+            depth_map,
+        )
+        depth_processed.append(depth_map)
+
+        normal_map = (normal_map + 1.0) * 0.5
+        normal_map = (normal_map * 255.0).astype(int)
+        cv2.imwrite(
+            str(out_dir / f"{camera_index:03d}_normal_map.png"),
+            normal_map,
+        )
+        normal_processed.append(normal_map)
+
+    depth_processed = np.stack(depth_processed, axis=0)[..., None]
+    normal_processed = np.stack(normal_processed, axis=0)
+
+    create_video_from_images(
+        depth_processed,
+        out_dir / "depth_sequence.mp4",
+    )
+
+def test_render_superquadric4(out_dir: Path, device: torch.device):
+    """Tests the rendering method of VolSDFRenderer"""
+
+    # create renderer
+    renderer_config = VolSDFRendererConfig(
+        ray_sampler_config=StratifiedSamplerConfig(
+            num_sample_coarse=64,
+            num_sample_fine=128,
+        ),
+    )
+    renderer = renderer_config.setup()
+
+    # create a superquadric
+    superquadric_config = SuperquadricConfig(
+        orientation=torch.tensor(
+            [
+                [0.0, 1.0, 0.0],
+                [0.0, 0.0, 1.0],
+                [1.0, 0.0, 0.0],
+            ],
+        ),
+        epsilons=torch.tensor([0.1, 1.0]),
         scales=torch.tensor([1.0, 1.0, 2.0]),
     )
     superqudric = superquadric_config.setup()

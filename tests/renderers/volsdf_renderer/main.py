@@ -15,6 +15,7 @@ from tests.renderers.volsdf_renderer.test_cases import (
     test_render_superquadric1,
     test_render_superquadric2,
     test_render_superquadric3,
+    test_render_superquadric4,
 )
 
 
@@ -43,6 +44,7 @@ def main():
             test_render_superquadric1,
             test_render_superquadric2,
             test_render_superquadric3,
+            test_render_superquadric4,
         ]
     )
     test = test_config.setup()
