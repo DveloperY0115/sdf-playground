@@ -97,10 +97,10 @@ class Superquadric(Primitive):
         a superquadric specified by its shape parameters.
         """
 
-        center: Shaped[Tensor, "1 3"] = self.center[None, ...]
-        orientation: Shaped[Tensor, "3 3"] = self.orientation
-        eps1, eps2 = self.epsilons[0], self.epsilons[1]
-        scale_x, scale_y, scale_z = self.scales[0], self.scales[1], self.scales[2] 
+        center: Shaped[Tensor, "1 3"] = self.center[None, ...].to(coords)
+        orientation: Shaped[Tensor, "3 3"] = self.orientation.to(coords)
+        eps1, eps2 = self.epsilons[0].to(coords), self.epsilons[1].to(coords)
+        scale_x, scale_y, scale_z = self.scales[0], self.scales[1], self.scales[2]
 
         # world -> local
         coords = (coords - center) @ orientation

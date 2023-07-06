@@ -77,7 +77,8 @@ class Sphere(Primitive):
         Evaluates the signed distance field defined by
         a sphere specified by its center and radius.
         """
-        center = self.center[None, :]
+
+        center = self.center[None, :].to(coords)
         radius = self.radius
 
         distance = torch.sqrt(
