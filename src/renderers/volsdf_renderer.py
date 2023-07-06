@@ -80,9 +80,10 @@ class VolSDFRenderer(Renderer):
         densities = scene.evaluate_density(sample_points.reshape(-1, 3))
         densities = densities.reshape(num_ray, num_sample)
 
+        # TODO: How to handle NaNs?
         # query normal maps at sample points
         normals = scene.evaluate_sdf_gradient(sample_points.reshape(-1, 3))
-        normals = normals / torch.linalg.norm(normals, dim=1, keepdim=True)
+        normals = normals / (torch.linalg.norm(normals, dim=1, keepdim=True) + 1e-8)
         normals = normals.reshape(num_ray, num_sample, 3)
 
         # compute distance between adjacent samples
