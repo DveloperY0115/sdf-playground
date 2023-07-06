@@ -38,7 +38,6 @@ class RaySampler(ABC):
     def sample_along_rays(
         self,
         ray_bundle: RayBundle,
-        num_sample: int,
         **kwargs,
     ) -> RaySamples:
         """Samples points along the given rays."""
