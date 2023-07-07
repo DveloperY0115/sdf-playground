@@ -33,11 +33,18 @@ class Field(ABC):
         self.config = config
 
     @abstractmethod
+    def evaluate_radiance(
+        self,
+        coords: Shaped[Tensor, "num_point 3"],
+    ) -> Shaped[Tensor, "num_point 3"]:
+        """Evaluates the radiance function at the given points."""
+
+    @abstractmethod
     def evaluate_density(
         self,
         coords: Shaped[Tensor, "num_point 3"],
     ) -> Shaped[Tensor, "num_point"]:
-        """Evaluates the density function parameterized by SDF at the given points."""
+        """Evaluates the density function at the given points."""
 
     @abstractmethod
     def evaluate_sdf(
