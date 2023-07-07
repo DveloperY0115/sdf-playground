@@ -52,9 +52,9 @@ class MLP(Network):
         self.actvn_func = self.config.actvn_func
         self.out_actvn_func = self.config.out_actvn_func
 
-        self._build_backbone()
+        self._build_network()
 
-    def _build_backbone(self) -> None:  
+    def _build_network(self) -> None:  
         """Builds the MLP backbone"""
 
         # pylint: disable=attribute-defined-outside-init

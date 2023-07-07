@@ -37,7 +37,7 @@ class Network(nn.Module):
         super().__init__()
 
     @abstractmethod
-    def _build_backbone(self) -> None:
+    def _build_network(self) -> None:
         """Builds the backbone of the network"""
 
     @abstractmethod
