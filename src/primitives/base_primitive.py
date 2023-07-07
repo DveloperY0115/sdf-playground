@@ -52,12 +52,3 @@ class Primitive(ABC):
         coords: Shaped[Tensor, "num_point 3"],
     ) -> Shaped[Tensor, "num_point 3"]:
         """Evaluates the gradient of the signed distance function at the given points."""
-
-
-if __name__ == "__main__":
-
-    # create config
-    config = PrimitiveConfig()
-
-    # instantiate primitive
-    primitive = config.setup()
