@@ -25,9 +25,6 @@ class Network(nn.Module):
 
     config: NetworkConfig
 
-    backbone: nn.Module
-    """"""
-
     def __init__(
         self,
         config: NetworkConfig,
