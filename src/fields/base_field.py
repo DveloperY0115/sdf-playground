@@ -10,6 +10,7 @@ from typing import Type
 
 from jaxtyping import Shaped
 from torch import Tensor
+from torch import nn
 
 from src.configs.base_config import InstantiateConfig
 
@@ -21,7 +22,7 @@ class FieldConfig(InstantiateConfig):
     _target: Type = field(default_factory=lambda: Field)
 
 
-class Field(ABC):
+class Field(nn.Module):
     """The base class of fields"""
 
     config: FieldConfig
@@ -30,6 +31,7 @@ class Field(ABC):
         self,
         config: FieldConfig,
     ) -> None:
+        super().__init__()
         self.config = config
 
     @abstractmethod
