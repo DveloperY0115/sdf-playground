@@ -33,6 +33,14 @@ class Primitive(ABC):
         self.config = config
 
     @abstractmethod
+    def evaluate_radiance(
+        self,
+        coords: Shaped[Tensor, "num_point 3"],
+        view_dir: Shaped[Tensor, "num_point 3"],
+    ) -> Shaped[Tensor, "num_point 3"]:
+        """Evaluates the radiance function parameterized by the SDF at the given points."""
+
+    @abstractmethod
     def evaluate_density(
         self,
         coords: Shaped[Tensor, "num_point 3"],

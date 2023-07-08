@@ -58,6 +58,15 @@ class Superquadric(Primitive):
         # check whether scales are positive
         assert torch.all(self.scales > 0.0)
 
+    @jaxtyped
+    @typechecked
+    def evaluate_radiance(
+        self,
+        coords: Shaped[Tensor, "num_point 3"],
+        view_dir: Shaped[Tensor, "num_point 3"],
+    ) -> Shaped[Tensor, "num_point 3"]:
+        # pylint: disable=unused-argument
+        raise NotImplementedError()
 
     @jaxtyped
     @typechecked
