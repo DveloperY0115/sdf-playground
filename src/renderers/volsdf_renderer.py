@@ -49,6 +49,7 @@ class VolSDFRenderer(Renderer):
         camera: PerspectiveCamera,
         pixel_indices: Int[Tensor, "num_ray"],
     ) -> Tuple[
+        Shaped[Tensor, "num_ray 3"],
         Shaped[Tensor, "num_ray"],
         Shaped[Tensor, "num_ray 3"]
     ]:
@@ -76,6 +77,15 @@ class VolSDFRenderer(Renderer):
         sample_points = ray_samples.compute_sample_coordinates()
         num_ray, num_sample, _ = sample_points.shape
 
+        # query radiances at sample points
+        ray_directions = ray_samples.ray_bundle.directions
+        ray_directions = ray_directions.unsqueeze(1).repeat(1, num_sample, 1)
+        radiances = scene.evaluate_radiance(
+            sample_points.reshape(-1, 3),
+            ray_directions.reshape(-1, 3),
+        )
+        radiances = radiances.reshape(num_ray, num_sample, 3)
+
         # query densities at sample points
         densities = scene.evaluate_density(sample_points.reshape(-1, 3))
         densities = densities.reshape(num_ray, num_sample)
@@ -99,12 +109,13 @@ class VolSDFRenderer(Renderer):
             deltas,
         )
 
-        # render depth map, normal map
+        # render
         t_samples = ray_samples.t_samples
+        rgb_image = torch.sum(weights[..., None] * radiances, dim=1)
         depth_map = torch.sum(weights * t_samples, dim=1)
         normal_map = torch.sum(weights[..., None] * normals, dim=1)
 
-        return depth_map, normal_map
+        return rgb_image, depth_map, normal_map
 
     @jaxtyped
     @typechecked
