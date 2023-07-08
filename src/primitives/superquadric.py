@@ -126,6 +126,7 @@ class Superquadric(Primitive):
 
     @jaxtyped
     @typechecked
+    @torch.enable_grad()
     def evaluate_sdf_gradient(
         self,
         coords: Shaped[Tensor, "num_point 3"],
