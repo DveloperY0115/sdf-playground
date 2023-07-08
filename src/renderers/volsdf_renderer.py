@@ -26,6 +26,8 @@ class VolSDFRendererConfig(RendererConfig):
 
     ray_sampler_config: StratifiedSamplerConfig = StratifiedSamplerConfig()
     """The configuration of the ray sampler used in the renderer"""
+    ray_batch_size: int = 4096
+    """Number of rays included in a single ray batch during training"""
 
 
 class VolSDFRenderer(Renderer):
@@ -40,6 +42,7 @@ class VolSDFRenderer(Renderer):
         super().__init__(config)
 
         self.ray_sampler = config.ray_sampler_config.setup()
+        self.ray_batch_size = config.ray_batch_size
 
     @jaxtyped
     @typechecked
@@ -74,48 +77,99 @@ class VolSDFRenderer(Renderer):
 
         # sample points along rays
         ray_samples = self.ray_sampler.sample_along_rays(ray_bundle)
-        sample_points = ray_samples.compute_sample_coordinates()
-        num_ray, num_sample, _ = sample_points.shape
-
-        # query radiances at sample points
-        ray_directions = ray_samples.ray_bundle.directions
-        ray_directions = ray_directions.unsqueeze(1).repeat(1, num_sample, 1)
-        radiances = scene.evaluate_radiance(
-            sample_points.reshape(-1, 3),
-            ray_directions.reshape(-1, 3),
+        rgb_image, depth_map, normal_map, weights = self.render_ray_batches(
+            scene,
+            camera,
+            ray_samples,
         )
-        radiances = radiances.reshape(num_ray, num_sample, 3)
-
-        # query densities at sample points
-        densities = scene.evaluate_density(sample_points.reshape(-1, 3))
-        densities = densities.reshape(num_ray, num_sample)
-
-        # TODO: How to handle NaNs?
-        # query normal maps at sample points
-        normals = scene.evaluate_sdf_gradient(sample_points.reshape(-1, 3))
-        normals = normals / (torch.linalg.norm(normals, dim=1, keepdim=True) + 1e-8)
-        normals = normals.reshape(num_ray, num_sample, 3)
-
-        # transform normals to camera space
-        camera_to_world = camera.camera_to_world
-        normals = normals @ camera_to_world[:3, :3].T
-
-        # compute distance between adjacent samples
-        deltas = ray_samples.compute_deltas()
-
-        # evaluate weights for the volume rendering integral
-        weights, alphas, transmittances = self.compute_weights_from_densities(
-            densities,
-            deltas,
-        )
-
-        # render
-        t_samples = ray_samples.t_samples
-        rgb_image = torch.sum(weights[..., None] * radiances, dim=1)
-        depth_map = torch.sum(weights * t_samples, dim=1)
-        normal_map = torch.sum(weights[..., None] * normals, dim=1)
 
         return rgb_image, depth_map, normal_map
+
+    @jaxtyped
+    @typechecked
+    def render_ray_batches(
+        self,
+        scene,
+        camera,
+        ray_samples,
+    ) -> Tuple[
+        Shaped[Tensor, "num_ray 3"],
+        Shaped[Tensor, "num_ray"],
+        Shaped[Tensor, "num_ray 3"],
+        Shaped[Tensor, "num_ray num_sample"],
+    ]:
+        """
+        Renders an image by dividing its pixels into small batches.
+        """
+        rgb_image = []
+        depth_map = []
+        normal_map = []
+        weights = []
+
+        sample_points = ray_samples.compute_sample_coordinates()
+        ray_dir = ray_samples.ray_bundle.directions
+        t_samples = ray_samples.t_samples
+        delta_t = ray_samples.compute_deltas()
+
+        point_chunks = torch.split(sample_points, self.ray_batch_size, dim=0)
+        ray_dir_chunks = torch.split(ray_dir, self.ray_batch_size, dim=0)
+        t_sample_chunks = torch.split(t_samples, self.ray_batch_size, dim=0)
+        delta_chunks = torch.split(delta_t, self.ray_batch_size, dim=0)
+
+        assert len(point_chunks) == len(ray_dir_chunks) == len(delta_chunks), (
+            f"{len(point_chunks)} {len(ray_dir_chunks)} {len(delta_chunks)}"
+        )
+
+        for point_chunk, ray_dir_chunk, t_sample_chunk, delta_chunk in zip(
+            point_chunks, ray_dir_chunks, t_sample_chunks, delta_chunks
+        ):
+
+            chunk_size, num_sample, _ = point_chunk.shape
+
+            # query radiances at sample points
+            ray_dir_chunk = ray_dir_chunk.unsqueeze(1).repeat(1, num_sample, 1)
+            radiance_chunk = scene.evaluate_radiance(
+                point_chunk.reshape(-1, 3),
+                ray_dir_chunk.reshape(-1, 3),
+            )
+            radiance_chunk = radiance_chunk.reshape(chunk_size, num_sample, 3)
+
+            # query densities at sample points
+            density_chunk = scene.evaluate_density(point_chunk.reshape(-1, 3))
+            density_chunk = density_chunk.reshape(chunk_size, num_sample)
+
+            # query normal maps at sample points
+            normal_chunk = scene.evaluate_sdf_gradient(point_chunk.reshape(-1, 3))
+            normal_chunk = normal_chunk / (
+                torch.linalg.norm(normal_chunk, dim=1, keepdim=True) + 1e-8
+            )
+            normal_chunk = normal_chunk.reshape(chunk_size, num_sample, 3)
+            camera_to_world = camera.camera_to_world
+            normal_chunk = normal_chunk @ camera_to_world[:3, :3].T
+
+            # evaluate weights for the volume rendering integral
+            weights_chunk, alphas_chunk, transmittances_chunk = self.compute_weights_from_densities(
+                density_chunk,
+                delta_chunk,
+            )
+
+            # render
+            rgb_chunk = torch.sum(weights_chunk[..., None] * radiance_chunk, dim=1)
+            depth_chunk = torch.sum(weights_chunk * t_sample_chunk, dim=1)
+            normal_chunk = torch.sum(weights_chunk[..., None] * normal_chunk, dim=1)
+
+            # collect
+            rgb_image.append(rgb_chunk)
+            depth_map.append(depth_chunk)
+            normal_map.append(normal_chunk)
+            weights.append(weights_chunk)
+
+        rgb_image = torch.cat(rgb_image, dim=0)
+        depth_map = torch.cat(depth_map, dim=0)
+        normal_map = torch.cat(normal_map, dim=0)
+        weights = torch.cat(weights, dim=0)
+
+        return rgb_image, depth_map, normal_map, weights
 
     @jaxtyped
     @typechecked
