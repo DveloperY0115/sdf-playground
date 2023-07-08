@@ -16,8 +16,6 @@ from src.cameras.perspective_camera import PerspectiveCamera
 from src.cameras.utils import compute_lookat_matrix, sample_trajectory_along_upper_hemisphere
 
 
-@jaxtyped
-@typechecked
 def create_camera_for_test(
     camera_position,
     origin,
