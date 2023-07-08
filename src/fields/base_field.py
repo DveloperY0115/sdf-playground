@@ -36,6 +36,7 @@ class Field(ABC):
     def evaluate_radiance(
         self,
         coords: Shaped[Tensor, "num_point 3"],
+        view_directions: Shaped[Tensor, "num_point 3"],
     ) -> Shaped[Tensor, "num_point 3"]:
         """Evaluates the radiance function at the given points."""
 

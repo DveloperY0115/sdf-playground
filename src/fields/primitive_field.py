@@ -54,6 +54,16 @@ class PrimitiveField(Field):
 
     @jaxtyped
     @typechecked
+    def evaluate_radiance(
+        self,
+        coords: Tensor,
+        view_directions: Tensor,
+    ) -> Tensor:
+        """Evaluates the radiance function at the given points."""
+        raise NotImplementedError()
+
+    @jaxtyped
+    @typechecked
     def evaluate_density(
         self,
         coords: Shaped[Tensor, "num_point 3"],
