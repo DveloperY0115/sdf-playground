@@ -18,10 +18,10 @@ import tyro
 
 
 from src.cameras.perspective_camera import PerspectiveCamera
-from encoders.positional_encoder import PositionalEncoderConfig
+from src.encoders.positional_encoder import PositionalEncoderConfig
 from src.fields.primitive_field import PrimitiveFieldConfig
 from src.networks.mlp import MLPConfig
-from src.networks.radiance_network import RadianceNetworkConfig
+from src.networks.nerf_radiance_network import NeRFRadianceNetworkConfig
 from src.primitives.sphere import SphereConfig
 from src.renderers.ray_samplers.stratified_sampler import UniformSamplerConfig
 from src.renderers.volsdf_renderer import VolSDFRendererConfig
@@ -311,9 +311,15 @@ def main(config: TrainConfig) -> None:
     # initialize model
     field = PrimitiveFieldConfig(
         primitive_config=SphereConfig(),
-        radiance_network_config=RadianceNetworkConfig(
+        radiance_network_config=NeRFRadianceNetworkConfig(
             coord_dim=63,
             view_dim=27,
+            coord_encoder_config=PositionalEncoderConfig(),
+            view_encoder_config=PositionalEncoderConfig(
+                signal_dim=3,
+                embed_level=4,
+                include_input=True,
+            ),
             hidden_dim=256,
             num_hidden_layers=3,
             actvn_func=nn.ReLU(),
@@ -326,12 +332,6 @@ def main(config: TrainConfig) -> None:
             num_hidden_layers=3,
             actvn_func=nn.ReLU(),
             out_actvn_func=nn.ReLU(),
-        ),
-        coord_encoder_config=PositionalEncoderConfig(),
-        view_direction_encoder_config=PositionalEncoderConfig(
-            signal_dim=3,
-            embed_level=4,
-            include_input=True,
         ),
     ####
     # ).setup()
