@@ -18,7 +18,7 @@ import tyro
 
 
 from src.cameras.perspective_camera import PerspectiveCamera
-from src.encoders.pe import PositionalEncoderConfig
+from encoders.positional_encoder import PositionalEncoderConfig
 from src.fields.primitive_field import PrimitiveFieldConfig
 from src.networks.mlp import MLPConfig
 from src.networks.radiance_network import RadianceNetworkConfig
